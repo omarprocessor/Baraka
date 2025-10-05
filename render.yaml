@@ -3,7 +3,9 @@ services:
     name: baraka-django
     env: python
     pythonVersion: 3.11.8
-    buildCommand: pip install -r requirements.txt
+    buildCommand: |
+      python -m pip install --upgrade pip setuptools wheel
+      pip install -r requirements.txt
     startCommand: gunicorn image_analyzer.wsgi:application
     envVars:
       - key: DATABASE_URL
@@ -11,9 +13,9 @@ services:
           name: baraka-db
           property: connectionString
       - key: SECRET_KEY
-        generateValue: true   # This generates a random SECRET_KEY for production
+        generateValue: true
       - key: DEBUG
-        value: "False"        # Must be a string, not boolean
+        value: "False"
       - key: ALLOWED_HOSTS
         value: "baraka-django.onrender.com"
 
