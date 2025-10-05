@@ -18,7 +18,3 @@ services:
         value: "False"
       - key: ALLOWED_HOSTS
         value: "baraka-django.onrender.com"
-
-databases:
-  - name: baraka-db
-    plan: free
