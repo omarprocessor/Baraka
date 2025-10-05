@@ -1,13 +1,43 @@
 services:
   - type: web
-    name: Baraka-1
+    name: image-analyzer
     env: python
-    region: oregon   # change if needed
-    pythonVersion: 3.10.12
-    buildCommand: pip install --upgrade pip && pip install -r requirements.txt
-    startCommand: python manage.py runserver 0.0.0.0:10000
-    repo: https://github.com/omarprocessor/Baraka
-    branch: main
+    region: oregon   # change to your preferred region
+    plan: free       # or starter, etc.
+    buildCommand: |
+      pip install -r requirements.txt
+      python manage.py migrate
+      python manage.py collectstatic --noinput
+    startCommand: gunicorn image_analyzer.wsgi:application
+    autoDeploy: true
     envVars:
-      - key: DJANGO_SETTINGS_MODULE
-        value: image_analyzer.settings
+      - key: SECRET_KEY
+        fromDatabase: false
+        value: your-secret-key
+      - key: DEBUG
+        fromDatabase: false
+        value: "False"
+      - key: ALLOWED_HOSTS
+        fromDatabase: false
+        value: "baraka-4.onrender.com"
+      - key: OPENAI_API_KEY
+        fromDatabase: false
+        value: your-openai-api-key
+      - key: DB_ENGINE
+        fromDatabase: false
+        value: django.db.backends.sqlite3
+      - key: DB_NAME
+        fromDatabase: false
+        value: db.sqlite3
+      - key: DB_USER
+        fromDatabase: false
+        value: ""
+      - key: DB_PASSWORD
+        fromDatabase: false
+        value: ""
+      - key: DB_HOST
+        fromDatabase: false
+        value: ""
+      - key: DB_PORT
+        fromDatabase: false
+        value: ""
