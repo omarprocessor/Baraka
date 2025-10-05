@@ -1,24 +1,13 @@
 services:
   - type: web
-    name: baraka-django
+    name: Baraka-1
     env: python
-    buildCommand: |
-      apt-get update && apt-get install -y libjpeg-dev zlib1g-dev
-      python3 -m pip install --upgrade pip setuptools wheel
-      pip install -r requirements.txt
-    startCommand: gunicorn image_analyzer.wsgi:application
+    region: oregon   # change if needed
+    pythonVersion: 3.10.12
+    buildCommand: pip install --upgrade pip && pip install -r requirements.txt
+    startCommand: python manage.py runserver 0.0.0.0:10000
+    repo: https://github.com/omarprocessor/Baraka
+    branch: main
     envVars:
-      - key: DATABASE_URL
-        fromDatabase:
-          name: baraka-db
-          property: connectionString
-      - key: SECRET_KEY
-        generateValue: true
-      - key: DEBUG
-        value: "False"
-      - key: ALLOWED_HOSTS
-        value: "baraka-django.onrender.com"
-
-databases:
-  - name: baraka-db
-    plan: free
+      - key: DJANGO_SETTINGS_MODULE
+        value: image_analyzer.settings
