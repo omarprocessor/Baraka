@@ -1,20 +1,24 @@
-import requests
-import json
+import openai
+from django.conf import settings
 import base64
 import os
-from django.conf import settings
 
 
 class OpenAIImageAnalyzer:
     def __init__(self):
-        self.api_key = settings.OPENAI_API_KEY
-        if not self.api_key:
+        # Check if API key is available
+        api_key = settings.OPENAI_API_KEY
+        if not api_key:
             raise ValueError("OpenAI API key is missing from settings")
-        print(f"✅ OpenAI API Key present: {bool(self.api_key)}")
+        
+        print(f"✅ OpenAI API Key present: {bool(api_key)}")
+        
+        # Simple initialization for openai==1.3.0
+        self.client = openai.OpenAI(api_key=api_key)
     
     def analyze_image(self, image_path):
         """
-        Analyze an image using OpenAI's GPT-4 Vision model via direct API call
+        Analyze an image using OpenAI's GPT-4 Vision model
         """
         try:
             print(f"🖼️ Starting image analysis for: {image_path}")
@@ -33,22 +37,18 @@ class OpenAIImageAnalyzer:
             
             print(f"🔤 Base64 encoded image length: {len(base64_image)}")
             
-            # Prepare the API request
-            headers = {
-                "Content-Type": "application/json",
-                "Authorization": f"Bearer {self.api_key}"
-            }
+            # Simple prompt
+            prompt = "Describe what you see in this image in detail."
             
-            payload = {
-                "model": "gpt-4-vision-preview",
-                "messages": [
+            print("🚀 Sending request to OpenAI...")
+            
+            response = self.client.chat.completions.create(
+                model="gpt-4-vision-preview",
+                messages=[
                     {
                         "role": "user",
                         "content": [
-                            {
-                                "type": "text",
-                                "text": "Describe what you see in this image in detail. Include objects, colors, composition, and any notable details."
-                            },
+                            {"type": "text", "text": prompt},
                             {
                                 "type": "image_url",
                                 "image_url": {
@@ -58,33 +58,13 @@ class OpenAIImageAnalyzer:
                         ]
                     }
                 ],
-                "max_tokens": 500
-            }
-            
-            print("🚀 Sending request to OpenAI API...")
-            response = requests.post(
-                "https://api.openai.com/v1/chat/completions",
-                headers=headers,
-                json=payload,
-                timeout=60  # Increased timeout for image analysis
+                max_tokens=500
             )
             
-            print(f"📡 OpenAI API response status: {response.status_code}")
+            result = response.choices[0].message.content
+            print("✅ OpenAI analysis completed successfully")
+            return result
             
-            if response.status_code == 200:
-                result = response.json()['choices'][0]['message']['content']
-                print("✅ OpenAI analysis completed successfully")
-                return result
-            else:
-                error_data = response.json() if response.content else {}
-                error_msg = f"OpenAI API error {response.status_code}: {error_data}"
-                print(f"❌ {error_msg}")
-                return error_msg
-            
-        except requests.exceptions.Timeout:
-            error_msg = "OpenAI API request timed out"
-            print(f"❌ {error_msg}")
-            return error_msg
         except Exception as e:
             error_msg = f"OpenAI analysis failed: {str(e)}"
             print(f"❌ {error_msg}")
