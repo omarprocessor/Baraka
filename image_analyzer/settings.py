@@ -4,14 +4,14 @@ Django settings for image_analyzer project.
 
 from pathlib import Path
 from decouple import config, Csv
+import os
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 
 # 🔐 Security
 SECRET_KEY = config('SECRET_KEY', default='unsafe-key')
 DEBUG = config('DEBUG', default=False, cast=bool)
-ALLOWED_HOSTS = ['baraka-4.onrender.com', 'localhost', '127.0.0.1']
-
+ALLOWED_HOSTS = config('ALLOWED_HOSTS', default='baraka-4.onrender.com,localhost,127.0.0.1', cast=Csv())
 
 # 🔌 Installed apps
 INSTALLED_APPS = [
@@ -60,15 +60,10 @@ TEMPLATES = [
 WSGI_APPLICATION = 'image_analyzer.wsgi.application'
 
 # 🗄️ Database
-# On Render, DATABASE_URL will be set automatically.
 DATABASES = {
     'default': {
         'ENGINE': config('DB_ENGINE', default='django.db.backends.sqlite3'),
         'NAME': config('DB_NAME', default=BASE_DIR / 'db.sqlite3'),
-        'USER': config('DB_USER', default=''),
-        'PASSWORD': config('DB_PASSWORD', default=''),
-        'HOST': config('DB_HOST', default=''),
-        'PORT': config('DB_PORT', default=''),
     }
 }
 
@@ -99,6 +94,7 @@ OPENAI_API_KEY = config('OPENAI_API_KEY', default='')
 
 # 🌐 CORS settings
 CORS_ALLOW_ALL_ORIGINS = True
+CORS_ALLOW_CREDENTIALS = True
 
 # ⚙️ REST Framework
 REST_FRAMEWORK = {
@@ -111,3 +107,11 @@ REST_FRAMEWORK = {
 
 # ✅ Default primary key
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
+
+# 🆕 Ensure media directory exists (double safety)
+try:
+    os.makedirs(MEDIA_ROOT, exist_ok=True)
+    os.makedirs(MEDIA_ROOT / 'images', exist_ok=True)
+    print("✅ Media directories verified in settings")
+except Exception as e:
+    print(f"⚠️  Media directory warning: {e}")
