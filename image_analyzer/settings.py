@@ -3,15 +3,18 @@ Django settings for image_analyzer project.
 """
 
 from pathlib import Path
-from decouple import config, Csv
+from decouple import config
 import os
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 
-# 🔐 Security
+# 🔐 Security - TEMPORARY FIX: Allow all hosts
 SECRET_KEY = config('SECRET_KEY', default='unsafe-key')
-DEBUG = config('DEBUG', default=False, cast=bool)
-ALLOWED_HOSTS = os.environ.get('ALLOWED_HOSTS', 'baraka-4.onrender.com,localhost,127.0.0.1').split(',')
+DEBUG = config('DEBUG', default=True, cast=bool)  # Set to True temporarily
+
+# 🆕 EMERGENCY FIX: Allow all hosts temporarily
+ALLOWED_HOSTS = ['*']  # This will allow any host
+
 # 🔌 Installed apps
 INSTALLED_APPS = [
     'django.contrib.admin',
@@ -61,8 +64,8 @@ WSGI_APPLICATION = 'image_analyzer.wsgi.application'
 # 🗄️ Database
 DATABASES = {
     'default': {
-        'ENGINE': config('DB_ENGINE', default='django.db.backends.sqlite3'),
-        'NAME': config('DB_NAME', default=BASE_DIR / 'db.sqlite3'),
+        'ENGINE': 'django.db.backends.sqlite3',
+        'NAME': BASE_DIR / 'db.sqlite3',
     }
 }
 
@@ -107,7 +110,7 @@ REST_FRAMEWORK = {
 # ✅ Default primary key
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
-# 🆕 Ensure media directory exists (double safety)
+# 🆕 Ensure media directory exists
 try:
     os.makedirs(MEDIA_ROOT, exist_ok=True)
     os.makedirs(MEDIA_ROOT / 'images', exist_ok=True)
