@@ -5,7 +5,18 @@ from rest_framework.response import Response
 from django.shortcuts import get_object_or_404
 from .models import ImageAnalysis
 from .serializers import ImageAnalysisSerializer, ImageUploadSerializer
-from .openai_service import OpenAIImageAnalyzer
+
+# Import with error handling
+try:
+    from .openai_service import OpenAIImageAnalyzer
+    OPENAI_AVAILABLE = True
+    print("✅ OpenAI service imported successfully")
+except ImportError as e:
+    print(f"❌ Failed to import OpenAI service: {e}")
+    OPENAI_AVAILABLE = False
+except Exception as e:
+    print(f"❌ Error initializing OpenAI: {e}")
+    OPENAI_AVAILABLE = False
 
 
 @api_view(['POST'])
@@ -14,17 +25,36 @@ def upload_image_and_analyze(request):
     """
     Upload an image and return both the image URL + OpenAI analysis result in one response.
     """
+    print("📨 Received upload request")
+    
     serializer = ImageUploadSerializer(data=request.data)
     
     if serializer.is_valid():
+        print("✅ Serializer validation passed")
+        
         # Save the image
         image_analysis = serializer.save()
+        print(f"💾 Image saved with ID: {image_analysis.id}")
         
-        # Run OpenAI analysis synchronously
-        analyzer = OpenAIImageAnalyzer()
-        analysis_result = analyzer.analyze_image(image_analysis.image.path)
+        # Handle OpenAI analysis with better error handling
+        analysis_result = "Analysis not available"
+        
+        if OPENAI_AVAILABLE:
+            try:
+                print("🤖 Starting OpenAI analysis...")
+                analyzer = OpenAIImageAnalyzer()
+                analysis_result = analyzer.analyze_image(image_analysis.image.path)
+                print(f"📝 Analysis result: {analysis_result[:100]}...")
+            except Exception as e:
+                analysis_result = f"Analysis service error: {str(e)}"
+                print(f"❌ OpenAI analysis failed: {e}")
+        else:
+            analysis_result = "OpenAI service not available"
+            print("⚠️ OpenAI service not available")
+        
         image_analysis.analysis_result = analysis_result
         image_analysis.save()
+        print("💾 Analysis result saved")
         
         # Return both image URL + analysis result
         response_data = {
@@ -33,9 +63,11 @@ def upload_image_and_analyze(request):
             'original_filename': image_analysis.original_filename,
             'analysis_result': analysis_result
         }
+        print("📤 Sending success response")
         return Response(response_data, status=status.HTTP_201_CREATED)
-    
-    return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+    else:
+        print(f"❌ Serializer errors: {serializer.errors}")
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
 @api_view(['GET'])
