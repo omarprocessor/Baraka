@@ -36,7 +36,7 @@ def upload_image_and_analyze(request):
         image_analysis = serializer.save()
         print(f"💾 Image saved with ID: {image_analysis.id}")
         
-        # Handle OpenAI analysis with better error handling
+        # Handle OpenAI analysis
         analysis_result = "Analysis not available"
         
         if OPENAI_AVAILABLE:
