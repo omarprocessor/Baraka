@@ -6,28 +6,39 @@ import os
 
 class OpenAIImageAnalyzer:
     def __init__(self):
-        self.client = openai.OpenAI(api_key=settings.OPENAI_API_KEY)
+        # Add debugging for API key
+        api_key = settings.OPENAI_API_KEY
+        print(f"OpenAI API Key present: {bool(api_key)}")
+        if not api_key:
+            raise ValueError("OpenAI API key is missing from settings")
+        
+        self.client = openai.OpenAI(api_key=api_key)
     
     def analyze_image(self, image_path):
         """
         Analyze an image using OpenAI's GPT-4 Vision model
         """
         try:
+            print(f"Starting image analysis for: {image_path}")
+            
+            # Check if file exists
+            if not os.path.exists(image_path):
+                return "Error: Image file not found on server"
+            
+            file_size = os.path.getsize(image_path)
+            print(f"Image file size: {file_size} bytes")
+            
             # Encode image to base64
             with open(image_path, "rb") as image_file:
-                base64_image = base64.b64encode(image_file.read()).decode('utf-8')
+                image_data = image_file.read()
+                base64_image = base64.b64encode(image_data).decode('utf-8')
             
-            # Create the analysis prompt
-            prompt = """
-            Analyze this image and provide a detailed description. Include:
-            1. What objects, people, or scenes are visible
-            2. Colors, lighting, and composition
-            3. Any text that appears in the image
-            4. The overall mood or atmosphere
-            5. Any interesting or notable details
+            print(f"Base64 encoded image length: {len(base64_image)}")
             
-            Please provide a comprehensive analysis in a clear, structured format.
-            """
+            # Simpler prompt for testing
+            prompt = "Describe what you see in this image in detail."
+            
+            print("Sending request to OpenAI...")
             
             response = self.client.chat.completions.create(
                 model="gpt-4-vision-preview",
@@ -45,10 +56,14 @@ class OpenAIImageAnalyzer:
                         ]
                     }
                 ],
-                max_tokens=1000
+                max_tokens=500  # Reduced for testing
             )
             
-            return response.choices[0].message.content
+            result = response.choices[0].message.content
+            print("OpenAI analysis completed successfully")
+            return result
             
         except Exception as e:
-            return f"Error analyzing image: {str(e)}"
+            error_msg = f"OpenAI analysis failed: {str(e)}"
+            print(error_msg)
+            return error_msg
